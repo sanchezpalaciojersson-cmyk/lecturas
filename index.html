@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>La Gran Aventura — Edición Épica</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Trebuchet MS', Arial, sans-serif;
+  background: #06020c;
+  color: #fff;
+}
+
+/* GESTIÓN DE PANTALLAS CON TRANSICIÓN */
+.screen { display: none; width: 100vw; height: 100vh; padding: 12px; }
+.screen.active { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+/* 1. FONDO MEJORADO DE BIENVENIDA (Gradiantes Místicos y Nebulosa) */
+#screenCover {
+  background: radial-gradient(circle at 50% 30%, #3a155c 0%, #0f051d 60%, #05010a 100%);
+  position: relative;
+}
+#screenCover::before {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 204, 0, 0.03) 3px);
+  pointer-events: none;
+}
+
+.card-welcome {
+  background: rgba(20, 10, 35, 0.85);
+  border: 3px solid #ffcc00;
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 0 35px rgba(255, 204, 0, 0.25), inset 0 0 15px rgba(255, 204, 0, 0.1);
+  backdrop-filter: blur(5px);
+  z-index: 2;
+}
+.card-welcome h1 { font-size: 30px; color: #ffea61; margin-bottom: 8px; text-shadow: 0 0 10px #ff9900, 2px 2px #550000; letter-spacing: 1px; }
+.card-welcome p { font-size: 13px; color: #dcd0f0; margin-bottom: 20px; line-height: 1.5; }
+
+/* 2. FONDO MEJORADO DE SELECCIÓN DE PERSONAJE (Estilo Templo / Galería) */
+#screenSelect {
+  background: radial-gradient(circle at 50% 50%, #1e1035 0%, #080312 80%);
+}
+.card-select {
+  background: rgba(18, 9, 32, 0.9);
+  border: 2px solid #ffcc00;
+  border-radius: 20px;
+  padding: 16px;
+  text-align: center;
+  max-width: 580px;
+  width: 100%;
+  box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+.character-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0; }
+.character-card {
+  border: 2px solid #4a2c7a;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1d1038 0%, #0e071e 100%);
+  padding: 10px 6px;
+  cursor: pointer;
+  transition: all .25s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+.character-card:hover, .character-card.selected {
+  border-color: #ffea61;
+  background: linear-gradient(180deg, #421e7b 0%, #1c0b3b 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 0 15px rgba(255, 234, 97, 0.4);
+}
+.portrait-preview { height: 90px; display: flex; align-items: center; justify-content: center; }
+
+/* 3. PANTALLA DE JUEGO / COMBATE */
+.game-container {
+  width: 100%; height: 100%; max-width: 800px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; background: #110920; border: 2px solid #ffcc00; border-radius: 10px; font-size: 12px;
+}
+.stat { background: #21123b; padding: 4px 8px; border-radius: 6px; border: 1px solid #5a3a91; color: #ffea61; font-weight: bold; }
+
+.story-box {
+  background: #fff8eb; color: #2b1a08; border: 2px solid #d4a017;
+  border-radius: 10px; padding: 6px 10px; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.story-box h2 { font-size: 14px; color: #8a5a00; margin: 0; }
+.story-box p { font-size: 12px; margin-top: 2px; line-height: 1.25; }
+
+.mapbox {
+  flex: 1; min-height: 0; margin: 6px 0; position: relative; overflow: hidden;
+  background: linear-gradient(to bottom, #090314 0%, #1e0b30 50%, #3b1035 70%, #15071a 71%, #050108 100%);
+  border: 3px solid #ffcc00; border-radius: 12px;
+}
+.mapbox::before {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 35px;
+  background: repeating-linear-gradient(90deg, #1a081e, #1a081e 20px, #2b0e32 20px, #2b0e32 40px);
+  border-top: 2px solid #ff0055;
+}
+.location { position: absolute; left: 8px; top: 8px; background: #0d0714ee; padding: 3px 6px; border-radius: 6px; border: 1px solid #ffcc00; font-size: 10px; color: #ffea61; font-weight: bold; }
+
+.hud-enemy-box { position: absolute; right: 8px; top: 8px; width: 130px; background: #0d0714dd; padding: 4px; border-radius: 6px; border: 1px solid #ffcc00; }
+.enemy-name { font-size: 10px; font-weight: bold; color: #ffea61; text-align: right; }
+.enemy-bar-box { width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; border: 1px solid #fff; }
+.enemy-bar-box i { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #00ff88, #ffcc00, #ff0055); transition: width .3s; }
+
+.fighter-wrapper { position: absolute; bottom: 12px; width: 80px; height: 95px; z-index: 5; transform-origin: bottom center; }
+#heroContainer { left: 8%; animation: heroIdle 0.75s ease-in-out infinite alternate; }
+#enemyContainer { right: 8%; transform: scaleX(-1); animation: enemyIdle 0.75s ease-in-out infinite alternate; }
+
+/* BOTONES GENERALES */
+.btn {
+  border: 0; border-radius: 10px; padding: 10px 20px;
+  background: linear-gradient(180deg, #ffea61 0%, #ffaa00 100%);
+  color: #331a00; font-size: 15px; font-weight: 900; cursor: pointer;
+  box-shadow: 0 4px 0 #996600; transition: transform .1s;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #996600; }
+.btn-action { width: 100%; padding: 12px; font-size: 16px; }
+
+/* MODAL PREGUNTAS */
+.question-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; place-items: center; padding: 12px; z-index: 20; }
+.question-modal.open { display: grid; }
+.question-card { width: min(450px, 100%); background: #180d2d; border: 2px solid #ffcc00; border-radius: 16px; padding: 14px; }
+.question-card h3 { color: #ffcc00; margin: 0 0 6px; font-size: 15px; }
+.answer-list { display: grid; gap: 8px; margin-top: 10px; }
+.answer-btn { padding: 8px; border: 1px solid #5a3a91; border-radius: 8px; background: #241444; color: #fff; text-align: left; font-size: 12px; cursor: pointer; font-weight: bold; }
+.answer-btn:hover { background: #381d68; border-color: #ffcc00; }
+
+/* ANIMACIONES */
+@keyframes heroIdle { 0% { transform: translateY(0); } 100% { transform: translateY(-4px); } }
+@keyframes enemyIdle { 0% { transform: scaleX(-1) translateY(0); } 100% { transform: scaleX(-1) translateY(-4px); } }
+.anim-hero-attack { animation: attackHero 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67) !important; }
+.anim-enemy-hit { animation: hitEnemy 0.35s ease-in-out !important; }
+.anim-enemy-attack { animation: attackEnemy 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67) !important; }
+.anim-hero-hit { animation: hitHero 0.35s ease-in-out !important; }
+
+@keyframes attackHero { 0% { transform: translateX(0); } 50% { transform: translateX(70px); } 100% { transform: translateX(0); } }
+@keyframes hitEnemy { 0% { transform: scaleX(-1); } 25% { transform: scaleX(-1) translateX(-15px) rotate(12deg); } 100% { transform: scaleX(-1); } }
+@keyframes attackEnemy { 0% { transform: scaleX(-1); } 50% { transform: scaleX(-1) translateX(70px); } 100% { transform: scaleX(-1); } }
+@keyframes hitHero { 0% { transform: translateX(0); } 25% { transform: translateX(-15px) rotate(-12deg); } 100% { transform: translateX(0); } }
+</style>
+</head>
+<body>
+
+<!-- 1. PANTALLA DE BIENVENIDA -->
+<section id="screenCover" class="screen active">
+  <div class="card-welcome">
+    <h1>⚔️ LA GRAN AVENTURA</h1>
+    <p>El Reino del Conocimiento ha caído bajo las sombras. Embárcate en una travesía épica, derrota a los 8 guardianes del conocimiento y responde el acertijo triple del Gran Dragón para restaurar la luz.</p>
+    <button class="btn" type="button" onclick="goToSelect()">🚀 Iniciar Aventura</button>
+  </div>
+</section>
+
+<!-- 2. PANTALLA DE SELECCIÓN DE PERSONAJE -->
+<section id="screenSelect" class="screen">
+  <div class="card-select">
+    <h2 style="color:#ffea61; font-size:20px; text-shadow:0 0 5px #ff9900;">🛡️ Elije a tu Campeón</h2>
+    <div id="characterGrid" class="character-grid"></div>
+    <button class="btn" type="button" onclick="startGame()">⚔️ Entrar al Combate</button>
+  </div>
+</section>
+
+<!-- 3. PANTALLA DE LUCHA / BATALLA -->
+<section id="screenGame" class="screen">
+  <div class="game-container">
+    <header class="topbar">
+      <span class="stat">🧙 <b id="hudHero">Héroe</b></span>
+      <span class="stat">❤️ <b id="hudLives">3</b></span>
+      <span class="stat">⭐ <b id="hudScore">0</b></span>
+      <span class="stat">🗺️ <b id="hudLevel">1</b>/9</span>
+    </header>
+
+    <div class="story-box">
+      <h2 id="storyTitle">Cargando...</h2>
+      <p id="storyText">Cargando...</p>
+    </div>
+
+    <div class="mapbox">
+      <div id="location" class="location">ESCENARIO</div>
+      <div class="hud-enemy-box">
+        <div id="enemyName" class="enemy-name">Rival</div>
+        <div class="enemy-bar-box"><i id="enemyBar" style="width: 100%;"></i></div>
+      </div>
+      <div id="heroContainer" class="fighter-wrapper"></div>
+      <div id="enemyContainer" class="fighter-wrapper"></div>
+    </div>
+
+    <button class="btn btn-action" type="button" onclick="openQuestion()">⚔️ ¡Lanzar Ataque de Lectura!</button>
+  </div>
+</section>
+
+<!-- MODAL PREGUNTAS -->
+<div id="questionModal" class="question-modal">
+  <div class="question-card">
+    <h3 id="qTitle">Desafío de Lectura</h3>
+    <p id="qText" style="font-size:13px; line-height:1.3; color:#fff;"></p>
+    <div id="qAnswers" class="answer-list"></div>
+  </div>
+</div>
+
+<script>
+// SPRITES SVG MEJORADOS (HÉROES DETALLADOS)
+const HERO_SPRITES = {
+  paladin: `<svg viewBox="0 0 100 120" width="100%" height="100%">
+    <!-- Capa --> <path d="M 25 40 L 15 95 L 85 95 L 75 40 Z" fill="#900c3f"/>
+    <!-- Armadura Cuerpo --> <path d="M 28 42 L 72 42 L 68 85 L 32 85 Z" fill="#b2bec3" stroke="#2c3e50" stroke-width="2"/>
+    <!-- Hombreras Doradas --> <circle cx="28" cy="45" r="10" fill="#f1c40f"/><circle cx="72" cy="45" r="10" fill="#f1c40f"/>
+    <!-- Cabeza/Casco --> <circle cx="50" cy="26" r="15" fill="#7f8c8d"/> <rect x="42" y="24" width="16" height="4" fill="#f1c40f"/>
+    <!-- Escudo --> <path d="M 15 50 L 35 50 L 30 80 L 15 65 Z" fill="#e74c3c" stroke="#f1c40f" stroke-width="2"/>
+    <!-- Espada Reluciente --> <path d="M 70 55 L 98 25 L 92 20 L 65 50 Z" fill="#ecf0f1" stroke="#3498db" stroke-width="2"/>
+  </svg>`,
+  
+  maga: `<svg viewBox="0 0 100 120" width="100%" height="100%">
+    <!-- Túnica --> <path d="M 25 45 L 75 45 L 85 95 L 15 95 Z" fill="#4a154b"/>
+    <!-- Detalles Túnica --> <path d="M 45 45 L 55 45 L 60 95 L 40 95 Z" fill="#ff007f"/>
+    <!-- Cabeza --> <circle cx="50" cy="28" r="14" fill="#ffdbac"/>
+    <!-- Sombrero de Maga --> <path d="M 20 28 Q 50 20 80 28 L 50 -5 Z" fill="#240046"/><circle cx="50" cy="0" r="4" fill="#ffea61"/>
+    <!-- Báculo Mágico con Gema --> <rect x="75" y="10" width="6" height="85" fill="#5c3d11"/> <circle cx="78" cy="10" r="10" fill="#00ffff"/>
+  </svg>`,
+  
+  cazador: `<svg viewBox="0 0 100 120" width="100%" height="100%">
+    <!-- Capa Verde --> <path d="M 20 35 L 10 95 L 90 95 L 80 35 Z" fill="#1e4620"/>
+    <!-- Traje Cuero --> <rect x="32" y="42" width="36" height="45" fill="#5c3d11" rx="4"/>
+    <!-- Cabeza/Capucha --> <circle cx="50" cy="28" r="14" fill="#ffdbac"/> <path d="M 32 25 Q 50 10 68 25 L 50 12 Z" fill="#2d5a27"/>
+    <!-- Arco --> <path d="M 70 20 Q 95 55 70 90" fill="none" stroke="#e67e22" stroke-width="5"/>
+    <line x1="70" y1="20" x2="70" y2="90" stroke="#fff" stroke-width="1.5"/>
+  </svg>`
+};
+
+const ENEMIES = {
+  duende: `<svg viewBox="0 0 100 120" width="100%" height="100%"><circle cx="50" cy="32" r="18" fill="#2ecc71"/><rect x="35" y="50" width="30" height="35" fill="#27ae60"/><rect x="68" y="30" width="12" height="45" fill="#795548"/></svg>`,
+  troll: `<svg viewBox="0 0 100 120" width="100%" height="100%"><circle cx="50" cy="25" r="22" fill="#3498db"/><rect x="25" y="40" width="50" height="50" fill="#2980b9"/></svg>`,
+  bruja: `<svg viewBox="0 0 100 120" width="100%" height="100%"><circle cx="50" cy="30" r="15" fill="#abebc6"/><path d="M 15 32 L 85 32 L 50 0 Z" fill="#4a235a"/><path d="M 30 48 L 70 48 L 80 95 L 20 95 Z" fill="#8e44ad"/></svg>`,
+  murcielago: `<svg viewBox="0 0 100 120" width="100%" height="100%"><circle cx="50" cy="45" r="16" fill="#2c3e50"/><path d="M 10 30 Q 30 10 50 40 Q 70 10 90 30 Q 70 70 50 50 Q 30 70 10 30 Z" fill="#34495e"/></svg>`,
+  escorpion: `<svg viewBox="0 0 100 120" width="100%" height="100%"><ellipse cx="50" cy="65" rx="25" ry="18" fill="#e67e22"/><circle cx="50" cy="48" r="12" fill="#d35400"/></svg>`,
+  golem: `<svg viewBox="0 0 100 120" width="100%" height="100%"><rect x="20" y="35" width="60" height="55" fill="#7f8c8d"/><rect x="30" y="15" width="40" height="25" fill="#95a5a6"/></svg>`,
+  yeti: `<svg viewBox="0 0 100 120" width="100%" height="100%"><rect x="20" y="35" width="60" height="55" fill="#ecf0f1"/><circle cx="50" cy="30" r="20" fill="#d5dbdb"/></svg>`,
+  caballero: `<svg viewBox="0 0 100 120" width="100%" height="100%"><rect x="25" y="40" width="50" height="48" fill="#1b2631"/><circle cx="50" cy="25" r="18" fill="#2c3e50"/></svg>`,
+  dragon: `<svg viewBox="0 0 100 120" width="100%" height="100%"><circle cx="50" cy="25" r="22" fill="#c70039"/><path d="M 20 40 L 60 30 L 80 50 L 70 90 L 30 90 Z" fill="#900c3f"/><polygon points="35,10 45,22 30,22" fill="#ffc300"/><polygon points="65,10 55,22 70,22" fill="#ffc300"/></svg>`
+};
+
+const CHARACTERS = [
+  { id: 'paladin', name: 'Paladín', desc: 'Tanque de acero', svg: HERO_SPRITES.paladin },
+  { id: 'maga', name: 'Maga Astral', desc: 'Poder arcano', svg: HERO_SPRITES.maga },
+  { id: 'cazador', name: 'Cazador', desc: 'Ataque certero', svg: HERO_SPRITES.cazador }
+];
+
+// NARRATIVA E HISTORIA MEJORADA
+const LEVELS = [
+  { level: 1, loc: "BOSQUE MÍSTICO", title: "El Guardián del Bosque", story: "Un Duende Chismoso custodia la entrada al bosque antiguo. Para avanzar debes demostrar que sabes escuchar sus historias.", name: "Duende Verde", svg: ENEMIES.duende, questions: [{ q: "¿Por qué el duende detuvo al viajero?", options: ["Para probar su comprensión de lectura.", "Para robarle sus botas de cuero."], correct: 0 }] },
+  { level: 2, loc: "PUENTE OLVIDADO", title: "El Cobrador de Peaje", story: "Un enorme Troll obstruye el paso sobre el río hirviente. Solo responder su acertijo te dará el pase seguro.", name: "Troll del Puente", svg: ENEMIES.troll, questions: [{ q: "¿En qué lugar descansaba el temible Troll?", options: ["En la copa de un árbol gigante.", "Bajo la sombra del viejo puente."], correct: 1 }] },
+  { level: 3, loc: "PANTANO SOMBRÍO", title: "Pociones y Miedos", story: "Una bruja anciana prepara un brebaje mágico. Requiere que interpretes su receta secreta correctamente.", name: "Bruja Oscura", svg: ENEMIES.bruja, questions: [{ q: "¿Qué estaba preparando la bruja en su caldero?", options: ["Una poción mágica.", "Un pastel de manzana."], correct: 0 }] },
+  { level: 4, loc: "CAVERNA ECO", title: "Sombras en las Alturas", story: "Las alas de una criatura gigante retumban en las paredes oscuras. Ataca coordinando tus palabras.", name: "Murciélago Gigante", svg: ENEMIES.murcielago, questions: [{ q: "¿Qué ilumina las profundidades de la cueva?", options: ["Antorchas encendidas.", "Cristales luminosos."], correct: 1 }] },
+  { level: 5, loc: "DESIERTO DE ARDORA", title: "Picadura Mortal", story: "Las arenas movedizas revelan al terror de la meseta. Usa la lógica para congelar sus movimientos.", name: "Escorpión Rey", svg: ENEMIES.escorpion, questions: [{ q: "¿De qué elemento es el poder que vence en el desierto?", options: ["Magia de Fuego.", "Magia de Hielo."], correct: 1 }] },
+  { level: 6, loc: "TEMPLO DE PIEDRA", title: "El Centinela Inmóvil", story: "Un coloso de piedra ancestral despierta tras mil años. Sus debilidades están escritas en las inscripciones del muro.", name: "Gólem Ancestral", svg: ENEMIES.golem, questions: [{ q: "¿Qué tesoro sagrado protege el Gólem?", options: ["El Gran Libro de la Sabiduría.", "Un cofre de monedas de bronce."], correct: 0 }] },
+  { level: 7, loc: "CUMBRE HELADA", title: "Furia en la Ventisca", story: "La nieve ciega tus pasos en la montaña sagrada. El gigante de hielo exige respuestas antes de dejarte subir.", name: "Yeti Legendario", svg: ENEMIES.yeti, questions: [{ q: "¿Cómo se describe la cima de la montaña?", options: ["Cálida y soleada.", "Con viento y nieve helada."], correct: 1 }] },
+  { level: 8, loc: "PUERTA DEL CASTILLO", title: "El Último Bastión", story: "Un Caballero de armadura negra custodia el portal al jefe final. Solo una mente rápida superará su defensa perfecta.", name: "Caballero Negro", svg: ENEMIES.caballero, questions: [{ q: "¿Qué indumentaria protege al guardián?", options: ["Una túnica ligera.", "Una armadura de acero impenetrable."], correct: 1 }] },
+  { 
+    level: 9, loc: "GUARIDA DEL DRAGÓN", title: "¡EL DESAFÍO SUPREMO!", story: "El Gran Dragón Carmesí despierta de su letargo. Debes responder 3 acertijos seguidos para restaurar la paz en el reino.", name: "Dragón Carmesí", svg: ENEMIES.dragon, 
+    questions: [
+      { q: "PREGUNTA 1/3: ¿A qué criatura suprema enfrentas ahora?", options: ["Al Gran Dragón Carmesí.", "Al Duende Verde del inicio."], correct: 0 },
+      { q: "PREGUNTA 2/3: ¿Cuántos acertijos debes resolver seguidos para vencerlo?", options: ["Un solo acertijo.", "Tres acertijos de lectura."], correct: 1 },
+      { q: "PREGUNTA 3/3: ¿Qué verdadero poder ha guiado tu victoria?", options: ["La fuerza bruta.", "La comprensión y lectura correcta."], correct: 1 }
+    ] 
+  }
+];
+
+let selectedHero = CHARACTERS[0];
+let currentLevelIdx = 0;
+let currentQuestionIdx = 0;
+let enemyHp = 100;
+let score = 0;
+let lives = 3;
+
+function setScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goToSelect() {
+  renderSelection();
+  setScreen('screenSelect');
+}
+
+function renderSelection() {
+  const grid = document.getElementById('characterGrid');
+  grid.innerHTML = '';
+  CHARACTERS.forEach(hero => {
+    const card = document.createElement('div');
+    card.className = `character-card ${hero.id === selectedHero.id ? 'selected' : ''}`;
+    card.onclick = () => { selectedHero = hero; renderSelection(); };
+    card.innerHTML = `
+      <div class="portrait-preview">${hero.svg}</div>
+      <strong style="font-size:13px; color:#ffea61; display:block; margin-top:4px;">${hero.name}</strong>
+      <span style="font-size:10px; color:#a29bfe;">${hero.desc}</span>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function startGame() {
+  currentLevelIdx = 0;
+  score = 0;
+  lives = 3;
+  document.getElementById('hudHero').textContent = selectedHero.name;
+  document.getElementById('heroContainer').innerHTML = selectedHero.svg;
+  loadLevel();
+  setScreen('screenGame');
+}
+
+function loadLevel() {
+  const lvl = LEVELS[currentLevelIdx];
+  enemyHp = 100;
+  currentQuestionIdx = 0;
+
+  document.getElementById('hudLevel').textContent = lvl.level;
+  document.getElementById('hudScore').textContent = score;
+  document.getElementById('hudLives').textContent = lives;
+
+  document.getElementById('storyTitle').textContent = lvl.title;
+  document.getElementById('storyText').textContent = lvl.story;
+  document.getElementById('location').textContent = lvl.loc;
+  document.getElementById('enemyName').textContent = lvl.name;
+  document.getElementById('enemyBar').style.width = '100%';
+
+  document.getElementById('enemyContainer').innerHTML = lvl.svg;
+}
+
+function openQuestion() {
+  const lvl = LEVELS[currentLevelIdx];
+  const qData = lvl.questions[currentQuestionIdx];
+
+  document.getElementById('qText').textContent = qData.q;
+  const answersDiv = document.getElementById('qAnswers');
+  answersDiv.innerHTML = '';
+
+  qData.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = `${idx + 1}. ${opt}`;
+    btn.onclick = () => checkAnswer(idx, qData.correct);
+    answersDiv.appendChild(btn);
+  });
+
+  document.getElementById('questionModal').classList.add('open');
+}
+
+function checkAnswer(selected, correct) {
+  document.getElementById('questionModal').classList.remove('open');
+  const lvl = LEVELS[currentLevelIdx];
+
+  if (selected === correct) {
+    triggerHeroAttack();
+    const damage = 100 / lvl.questions.length;
+    enemyHp = Math.max(0, enemyHp - damage);
+    document.getElementById('enemyBar').style.width = enemyHp + '%';
+    score += 200;
+    document.getElementById('hudScore').textContent = score;
+
+    currentQuestionIdx++;
+
+    if (currentQuestionIdx < lvl.questions.length) {
+      setTimeout(() => alert("✨ ¡Ataque certero! Prepárate para la siguiente pregunta."), 300);
+    } else {
+      setTimeout(() => {
+        currentLevelIdx++;
+        if (currentLevelIdx < LEVELS.length) {
+          alert(`🌟 ¡Nivel ${currentLevelIdx} superado!`);
+          loadLevel();
+        } else {
+          alert("🏆 ¡VICTORIA SUPREMA! Has derrotado al Dragón y restaurado la sabiduría del Reino.");
+          setScreen('screenCover');
+        }
+      }, 350);
+    }
+  } else {
+    triggerEnemyAttack();
+    lives = Math.max(0, lives - 1);
+    document.getElementById('hudLives').textContent = lives;
+
+    if (lives <= 0) {
+      setTimeout(() => {
+        alert("☠️ Has caído en combate. La oscuridad ha prevalecido... Reiniciando.");
+        setScreen('screenCover');
+      }, 350);
+    }
+  }
+}
+
+function triggerHeroAttack() {
+  const hero = document.getElementById('heroContainer');
+  const enemy = document.getElementById('enemyContainer');
+  hero.classList.remove('anim-hero-attack');
+  enemy.classList.remove('anim-enemy-hit');
+  void hero.offsetWidth;
+  hero.classList.add('anim-hero-attack');
+  setTimeout(() => enemy.classList.add('anim-enemy-hit'), 150);
+}
+
+function triggerEnemyAttack() {
+  const hero = document.getElementById('heroContainer');
+  const enemy = document.getElementById('enemyContainer');
+  enemy.classList.remove('anim-enemy-attack');
+  hero.classList.remove('anim-hero-hit');
+  void enemy.offsetWidth;
+  enemy.classList.add('anim-enemy-attack');
+  setTimeout(() => hero.classList.add('anim-hero-hit'), 150);
+}
+</script>
+</body>
+</html>
